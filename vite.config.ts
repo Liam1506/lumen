@@ -12,5 +12,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  base: "/lumon/",
+  worker: {
+    format: "es",
+    plugins: () => [wasm()], // Ensures WASM works inside the worker too
+  },
+  base: "/lumen/",
 });
