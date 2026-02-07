@@ -99,11 +99,11 @@ async function compile(vfs: VfsMap, mainFile: string): Promise<void> {
         error: "Compilation produced no output",
       } satisfies ErrorMessage);
     }
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Worker: Compile Error", err);
     self.postMessage({
       type: "error",
-      error: err instanceof Error ? err.message : String(err),
+      error: err instanceof Error ? err.message : "Unknown compilation error",
     } satisfies ErrorMessage);
   }
 }

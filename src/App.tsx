@@ -6,7 +6,7 @@ import {
   ResizablePanelGroup,
 } from "./components/ui/resizable";
 import { AppSidebar } from "./appSidebar";
-import TypstEditor2 from "./components/typstCodeEditor";
+import TypstEditor2 from "./components/Editor/typstCodeEditor";
 import TypstPreviewView from "./views/TypstPreviewView";
 import { EditProfileDialog } from "./components/uploadFolder";
 import TypstWorker from "./worker/typst.worker.ts?worker";
