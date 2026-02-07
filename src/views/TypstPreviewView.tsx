@@ -1,41 +1,76 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { $typst } from "@myriaddreamin/typst.ts";
-import TypstWorker from "../worker/typst.worker.ts?worker";
 
 interface TypstPreviewViewProps {
-  code: string;
+  worker: Worker | null;
 }
 
-export const TypstPreviewView: React.FC<TypstPreviewViewProps> = ({ code }) => {
-  const [workerReady, setWorkerReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [lastVectorData, setLastVectorData] = useState<any>(null); // Store data for resizing
+// Globale Flag außerhalb der Komponente
+let rendererInitialized = false;
 
-  const workerRef = useRef<Worker | null>(null);
+export const TypstPreviewView: React.FC<TypstPreviewViewProps> = ({
+  worker,
+}) => {
+  const [error, setError] = useState<string | null>(null);
+  const [lastVectorData, setLastVectorData] = useState<Uint8Array | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // 1. Memoized Render Function
-  const renderCanvas = useCallback((vectorData: any) => {
+  // Initialize renderer nur einmal beim ersten Mount
+  useEffect(() => {
+    const initRenderer = async () => {
+      if (rendererInitialized) {
+        console.log("Renderer already initialized, skipping");
+        return;
+      }
+
+      try {
+        console.log("Initializing renderer...");
+        await $typst.setRendererInitOptions({
+          getModule: () => "/wasm/typst_ts_renderer_bg.wasm",
+        });
+        rendererInitialized = true;
+        console.log("Renderer initialized successfully");
+      } catch (err) {
+        console.error("Renderer initialization error:", err);
+        setError("Failed to initialize renderer");
+      }
+    };
+
+    initRenderer();
+  }, []); // Nur einmal beim Mount
+
+  // Memoized Render Function
+  const renderCanvas = useCallback(async (vectorData: Uint8Array) => {
     if (!canvasRef.current || !vectorData) return;
 
+    if (!rendererInitialized) {
+      console.warn("Renderer not yet initialized, waiting...");
+      return;
+    }
+
     try {
+      console.log("Rendering canvas with data length:", vectorData.length);
+
       canvasRef.current.innerHTML = "";
-      $typst.canvas(canvasRef.current, {
+
+      await $typst.canvas(canvasRef.current, {
         vectorData: vectorData,
-        // This ensures high-quality rendering based on screen density
         pixelPerPt: window.devicePixelRatio || 1,
       });
+
+      console.log("Render successful");
+      setError(null);
     } catch (err) {
       console.error("Render error:", err);
+      setError("Rendering failed. Check console for details.");
     }
   }, []);
 
-  // 2. Watch for Container Resizes
+  // Watch for Container Resizes
   useEffect(() => {
-    if (!canvasRef.current || !lastVectorData) return;
+    if (!canvasRef.current || !lastVectorData || !rendererInitialized) return;
 
     const resizeObserver = new ResizeObserver(() => {
-      // Re-render the existing data when the div size changes
       renderCanvas(lastVectorData);
     });
 
@@ -43,63 +78,48 @@ export const TypstPreviewView: React.FC<TypstPreviewViewProps> = ({ code }) => {
     return () => resizeObserver.disconnect();
   }, [lastVectorData, renderCanvas]);
 
-  // 3. Initialize Worker
+  // Listen to the Worker
   useEffect(() => {
-    let mounted = true;
-    const initializeTypst = async () => {
-      try {
-        await $typst.setRendererInitOptions({
-          getModule: () => "/wasm/typst_ts_renderer_bg.wasm",
-        });
+    if (!worker) return;
 
-        workerRef.current = new TypstWorker();
-        workerRef.current.onmessage = (e) => {
-          if (!mounted) return;
+    const handleMessage = (e: MessageEvent) => {
+      const { type, vectorData, error: workerError } = e.data;
 
-          if (e.data.type === "ready") {
-            setWorkerReady(true);
-            setError(null);
-          }
+      if (type === "render" && vectorData) {
+        console.log("Received vector data, length:", vectorData.length);
+        setLastVectorData(vectorData);
+        renderCanvas(vectorData);
+      }
 
-          if (e.data.vectorData) {
-            setLastVectorData(e.data.vectorData); // Save data to state
-            renderCanvas(e.data.vectorData); // Render immediately
-            setError(null);
-          }
-
-          if (e.data.error) setError(e.data.error);
-        };
-      } catch (err) {
-        setError(`Failed to initialize: ${err}`);
+      if (type === "error") {
+        setError(workerError);
       }
     };
 
-    initializeTypst();
-    return () => {
-      mounted = false;
-      workerRef.current?.terminate();
-    };
-  }, [renderCanvas]);
+    worker.addEventListener("message", handleMessage);
 
-  // 4. Send updates to worker
-  useEffect(() => {
-    if (!workerReady || !code) return;
-    const timer = setTimeout(() => {
-      workerRef.current?.postMessage({ content: code });
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [code, workerReady]);
+    return () => {
+      worker.removeEventListener("message", handleMessage);
+    };
+  }, [worker, renderCanvas]);
 
   return (
-    <div className="relative h-full w-full bg-[#f8f9fa] overflow-hidden flex flex-col">
+    <div className="relative h-full w-full bg-slate-100 overflow-hidden flex flex-col">
+      {error && (
+        <div className="absolute top-4 left-4 right-4 z-50 p-4 bg-red-50 border-l-4 border-red-500 shadow-md">
+          <p className="text-red-700 font-mono text-xs overflow-auto max-h-32">
+            {error}
+          </p>
+        </div>
+      )}
       <div className="flex-1 overflow-auto p-4 md:p-8 flex justify-center">
         <div
           ref={canvasRef}
-          className="typst-canvas-container shadow-md bg-white min-h-[297mm] w-full max-w-[210mm]"
+          className="shadow-2xl bg-white min-h-[297mm] w-full max-w-[210mm] transition-all"
         />
       </div>
-      {<h1>{error}</h1>}
     </div>
   );
 };
+
 export default TypstPreviewView;

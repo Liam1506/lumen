@@ -1,68 +1,95 @@
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-import { TreeView } from "./components/tree-view";
+import { TreeView } from "./components/ui/tree-view";
+import { Button } from "./components/ui/button";
+import { FileTextIcon, FileIcon, FolderIcon } from "lucide-react";
 
-export function AppSidebar() {
-  return (
-    <Sidebar>
-      <SidebarHeader />
-      <SidebarContent>
-        <TreeView data={data}></TreeView>
-        <SidebarGroup />
-        <SidebarGroup />
-      </SidebarContent>
-      <SidebarFooter />
-    </Sidebar>
-  );
-}
 interface TreeDataItem {
   id: string;
   name: string;
-  icon?: React.ComponentType<{ className?: string }>;
-  selectedIcon?: React.ComponentType<{ className?: string }>;
-  openIcon?: React.ComponentType<{ className?: string }>;
+  icon?: any;
   children?: TreeDataItem[];
-  actions?: React.ReactNode;
   onClick?: () => void;
-  draggable?: boolean;
-  droppable?: boolean;
-  disabled?: boolean;
   className?: string;
 }
-const data: TreeDataItem[] = [
-  {
-    id: "1",
-    name: "Item 1",
-    children: [
-      {
-        id: "2",
-        name: "Item 1.1",
-        children: [
-          {
-            id: "3",
-            name: "Item 1.1.1",
-          },
-          {
-            id: "4",
-            name: "Item 1.1.2",
-          },
-        ],
-      },
-      {
-        id: "5",
-        name: "Item 1.2 (disabled)",
-        disabled: true,
-      },
-    ],
-  },
-  {
-    id: "6",
-    name: "Item 2 (draggable)",
-    draggable: true,
-  },
-];
+
+interface SidebarProps {
+  files: Record<string, string | Uint8Array>;
+  activeFile: string;
+  onSelectFile: (path: string) => void;
+  onOpenProfile: () => void;
+}
+
+export function AppSidebar({
+  files,
+  activeFile,
+  onSelectFile,
+  onOpenProfile,
+}: SidebarProps) {
+  // Funktion, um flache Pfade in eine Baumstruktur zu konvertieren
+  const buildTree = (filePaths: string[]): TreeDataItem[] => {
+    const root: TreeDataItem[] = [];
+
+    filePaths.forEach((path) => {
+      const parts = path.split("/");
+      let currentLevel = root;
+
+      parts.forEach((part, index) => {
+        const isFile = index === parts.length - 1;
+        const currentPath = parts.slice(0, index + 1).join("/");
+
+        let existingPath = currentLevel.find((item) => item.name === part);
+
+        if (!existingPath) {
+          existingPath = {
+            id: currentPath,
+            name: part,
+            icon: isFile
+              ? part.endsWith(".typ")
+                ? FileTextIcon
+                : FileIcon
+              : FolderIcon,
+            children: isFile ? undefined : [],
+            className:
+              currentPath === activeFile
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "",
+            // Nur Dateien triggern den Editor-Wechsel
+            onClick: isFile ? () => onSelectFile(currentPath) : undefined,
+          };
+          currentLevel.push(existingPath);
+        }
+
+        if (!isFile && existingPath.children) {
+          currentLevel = existingPath.children;
+        }
+      });
+    });
+
+    return root;
+  };
+
+  const treeData = buildTree(Object.keys(files));
+
+  return (
+    <Sidebar>
+      <SidebarHeader className="p-4">
+        <Button className="w-full" onClick={onOpenProfile}>
+          Projekt hochladen
+        </Button>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Dateien
+          </div>
+          <TreeView data={treeData} />
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
+  );
+}
