@@ -98,7 +98,7 @@ export const TypstPreviewView: React.FC<TypstPreviewViewProps> = ({ code }) => {
           className="typst-canvas-container shadow-md bg-white min-h-[297mm] w-full max-w-[210mm]"
         />
       </div>
-      {/* ... Error & Loading UI ... */}
+      {<h1>{error}</h1>}
     </div>
   );
 };

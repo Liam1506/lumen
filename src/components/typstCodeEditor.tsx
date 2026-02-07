@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { typst } from "codemirror-lang-typst";
 import { indentUnit } from "@codemirror/language";
-import { solarizedLight } from "@uiw/codemirror-theme-solarized";
 import { githubLight } from "@uiw/codemirror-theme-github";
 
 // Define props to receive value and change handler from App

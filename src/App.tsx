@@ -1,6 +1,5 @@
 import { AppSidebar } from "./appSidebar";
 import TypstEditor2 from "./components/typstCodeEditor";
-import { TypstEditor } from "./components/typstEditor";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -8,7 +7,7 @@ import {
 } from "./components/ui/resizable";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import TypstPreviewView from "./views/TypstPreviewView";
-import React, { useState } from "react";
+import { useState } from "react";
 
 export function App() {
   const [code, setCode] = useState<string>(
