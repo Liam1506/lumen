@@ -22,7 +22,6 @@ export const TypstPreviewView: React.FC<TypstPreviewViewProps> = ({
         console.log("Renderer already initialized, skipping");
         return;
       }
-
       try {
         console.log("Initializing renderer...");
         await $typst.setRendererInitOptions({
@@ -35,14 +34,12 @@ export const TypstPreviewView: React.FC<TypstPreviewViewProps> = ({
         setError("Failed to initialize renderer");
       }
     };
-
     initRenderer();
   }, []); // Nur einmal beim Mount
 
   // Memoized Render Function
   const renderCanvas = useCallback(async (vectorData: Uint8Array) => {
     if (!canvasRef.current || !vectorData) return;
-
     if (!rendererInitialized) {
       console.warn("Renderer not yet initialized, waiting...");
       return;
@@ -50,11 +47,15 @@ export const TypstPreviewView: React.FC<TypstPreviewViewProps> = ({
 
     try {
       console.log("Rendering canvas with data length:", vectorData.length);
-
       canvasRef.current.innerHTML = "";
 
+      // CRITICAL: Create completely new buffer to avoid aliasing
+      const buffer = new ArrayBuffer(vectorData.byteLength);
+      const dataClone = new Uint8Array(buffer);
+      dataClone.set(vectorData);
+
       await $typst.canvas(canvasRef.current, {
-        vectorData: vectorData,
+        vectorData: dataClone,
         pixelPerPt: window.devicePixelRatio || 1,
       });
 
@@ -87,8 +88,14 @@ export const TypstPreviewView: React.FC<TypstPreviewViewProps> = ({
 
       if (type === "render" && vectorData) {
         console.log("Received vector data, length:", vectorData.length);
-        setLastVectorData(vectorData);
-        renderCanvas(vectorData);
+
+        // CRITICAL: Clone the data BEFORE storing in state
+        const buffer = new ArrayBuffer(vectorData.byteLength);
+        const dataClone = new Uint8Array(buffer);
+        dataClone.set(vectorData);
+
+        setLastVectorData(dataClone);
+        renderCanvas(dataClone);
       }
 
       if (type === "error") {
@@ -97,7 +104,6 @@ export const TypstPreviewView: React.FC<TypstPreviewViewProps> = ({
     };
 
     worker.addEventListener("message", handleMessage);
-
     return () => {
       worker.removeEventListener("message", handleMessage);
     };
