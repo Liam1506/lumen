@@ -16,5 +16,5 @@ export default defineConfig({
     format: "es",
     plugins: () => [wasm()], // Ensures WASM works inside the worker too
   },
-  base: "/lumen/",
+  base: "/",
 });
