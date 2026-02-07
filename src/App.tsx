@@ -86,7 +86,7 @@ export function App() {
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={50}>
-              <div className="h-full bg-slate-100 p-4 overflow-auto">
+              <div className="h-full bg-slate-100 overflow-auto">
                 <TypstPreviewView worker={worker} />
               </div>
             </ResizablePanel>
