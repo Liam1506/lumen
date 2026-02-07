@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { $typst } from "@myriaddreamin/typst.ts";
-import { Button } from "@/components/ui/button";
 
 interface TypstPreviewViewProps {
   worker: Worker | null;
@@ -99,10 +98,6 @@ export const TypstPreviewView: React.FC<TypstPreviewViewProps> = ({
     <div
       ref={scrollRef}
       className="h-full w-full bg-slate-100 overflow-auto flex justify-center p-6"
-      style={{
-        // 🚫 disable browser scroll anchoring (CRITICAL)
-        overflowAnchor: "none",
-      }}
     >
       {error && (
         <div className="fixed top-4 z-50 max-w-xl bg-red-50 border-l-4 border-red-500 p-3 shadow">
