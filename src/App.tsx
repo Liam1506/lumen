@@ -7,14 +7,15 @@ import {
 } from "./components/ui/resizable";
 import { AppSidebar } from "./appSidebar";
 import TypstEditor2 from "./components/Editor/typstCodeEditor";
-import TypstPreviewView from "./views/TypstPreviewView";
 import { EditProfileDialog } from "./components/uploadFolder";
-import TypstWorker from "./worker/typst.worker.ts?worker";
+import TypstWorker from "./worker/typst.worker2.ts?worker";
+import TypstPreviewView2 from "./views/TypstPreviewView2";
+import { testString } from "./views/testString";
 
 export function App() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [files, setFiles] = useState<Record<string, string | Uint8Array>>({
-    "main.typ": "= Hallo Welt\nDies ist ein Test.",
+    "main.typ": testString,
   });
   const [activeFile, setActiveFile] = useState("main.typ");
 
@@ -87,7 +88,7 @@ export function App() {
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={50}>
               <div className="h-full bg-slate-100 overflow-auto">
-                <TypstPreviewView worker={worker} />
+                <TypstPreviewView2 worker={worker} />
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>

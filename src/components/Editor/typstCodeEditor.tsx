@@ -87,12 +87,10 @@ const TypstEditor2: React.FC<TypstEditorProps> = ({
         );
       }
 
-      // Set new timer
-      debounceTimerRef.current = window.setTimeout(() => {
         console.log("Editor: Debounce complete, triggering onChange");
         onChange(newValue);
         debounceTimerRef.current = null;
-      }, debounce);
+  
 
       lastChangeTimeRef.current = now;
     },
