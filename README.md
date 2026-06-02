@@ -1,3 +1,3 @@
-# React + TypeScript + Vite + shadcn/ui
+# Lumen
 
-This is a template for a new Vite project with React, TypeScript, and shadcn/ui.
+Online Typst editor build with react and vite.
